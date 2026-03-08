@@ -1,0 +1,4 @@
+domain,city,count,query
+zhipin.com,北京,10,python
+zhipin.com,上海,60,python
+zhipin.com,"南京,杭州",30,agent

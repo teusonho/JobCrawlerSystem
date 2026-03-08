@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss直聘职位列表 - 数据看板</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00bebd; /* Boss直聘品牌青色 */
+            --primary-hover: #00a8a7;
+            --bg-color: #f0f5f7;
+            --text-main: #333;
+            --text-light: #666;
+            --white: #ffffff;
+            --shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --radius: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* 头部样式 */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            color: #1d2129;
+            font-weight: 600;
+            border-left: 5px solid var(--primary-color);
+            padding-left: 15px;
+        }
+
+        .task-id-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            box-shadow: 0 4px 10px rgba(118, 75, 162, 0.2);
+        }
+
+        /* 搜索筛选区 */
+        .search-filter-section {
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+
+        .filter-group input, .filter-group select {
+            padding: 10px 12px;
+            border: 1px solid #e5e6eb;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 190, 189, 0.1);
+        }
+
+        /* 按钮组 */
+        .button-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid #dcdfe6;
+            color: var(--text-light);
+        }
+
+        .btn-outline:hover {
+            background-color: #f5f7fa;
+            border-color: #c0c4cc;
+        }
+
+        /* 表格样式优化 */
+        .table-container {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden; /* 确保圆角生效 */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 14px;
+            padding: 16px;
+            text-align: left;
+            border-bottom: 2px solid #f1f1f1;
+        }
+
+        td {
+            padding: 16px;
+            font-size: 14px;
+            color: var(--text-main);
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background-color: rgba(0, 190, 189, 0.02);
+            transition: background 0.2s;
+        }
+
+        /* 链接样式 */
+        .job-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .job-link:hover {
+            text-decoration: underline;
+        }
+
+        /* 徽章样式 */
+        .salary-tag {
+            color: #ff5d5d;
+            font-weight: 600;
+        }
+
+        .location {
+            color: #86909c;
+            font-size: 13px;
+        }
+
+        .no-results {
+            padding: 50px;
+            text-align: center;
+            background: var(--white);
+            border-radius: var(--radius);
+            color: #999;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .header-section { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .table-container { overflow-x: auto; }
+            .filter-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header-section">
+            <h1>Boss直聘职位列表</h1>
+            {% if task_id %}
+                <span class="task-id-label">Task ID: {{ task_id }}</span>
+            {% endif %}
+        </header>
+
+        <section class="search-filter-section">
+            <form method="get" id="search-filter-form">
+                <div class="filter-grid">
+                    <div class="filter-group" style="grid-column: span 2;">
+                        <label for="q">职位关键词</label>
+                        <input type="text" id="q" name="q" value="{{ query }}" placeholder="搜索职位名称、公司...">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="city">工作城市</label>
+                        <select id="city" name="city">
+                            <option value="">全部城市</option>
+                            {% for city in cities %}
+                                <option value="{{ city }}" {% if city == city_filter %}selected{% endif %}>{{ city }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="experience">经验要求</label>
+                        <select id="experience" name="experience">
+                            <option value="">不限经验</option>
+                            {% for exp in experiences %}
+                                <option value="{{ exp }}" {% if exp == experience_filter %}selected{% endif %}>{{ exp }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="scale">公司规模</label>
+                        <select id="scale" name="scale">
+                            <option value="">全部规模</option>
+                            {% for scale_val in scales %}
+                                <option value="{{ scale_val }}" {% if scale_val == scale_filter %}selected{% endif %}>{{ scale_val }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-actions">
+                    <button type="button" class="btn btn-outline" onclick="clearFilters()">重置</button>
+                    <button type="submit" class="btn btn-primary">立即筛选</button>
+                </div>
+            </form>
+        </section>
+
+        {% if error_message %}
+            <div class="no-results">
+                <p>{{ error_message }}</p>
+            </div>
+        {% elif items %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>职位详情</th>
+                            <th>招聘者</th>
+                            <th>薪资待遇</th>
+                            <th>工作地点</th>
+                            <th>公司信息</th>
+                            <th>更新时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; margin-bottom: 4px;">{{ item.name }}</div>
+                                <a href="{{ item.link }}" target="_blank" class="job-link">查看详情 →</a>
+                            </td>
+                            <td>
+                                <div>{{ item.boss_name }}</div>
+                                <div style="font-size: 12px; color: #999;">{{ item.boss_title }}</div>
+                            </td>
+                            <td><span class="salary-tag">{{ item.salary }}</span></td>
+                            <td class="location">
+                                <div>{{ item.experience }}</div>
+                                <div>
+                                    {% if item.city %}{{ item.city }}{% endif %}
+                                    {% if item.area %}/ {{ item.area }}{% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 500;">{{ item.company }}</div>
+                                <div style="font-size: 12px; color: #999;">规模: {{ item.scale }}</div>
+                            </td>
+                            <td style="color: #999; font-size: 12px;">
+                                {{ item.updated_at|date:"Y-m-d" }}<br>
+                                {{ item.updated_at|date:"H:i:s" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="no-results">
+                <p>☕ 没找到相关职位，换个关键词试试？</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function clearFilters() {
+            const form = document.getElementById('search-filter-form');
+            const inputs = form.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                if (input.tagName === 'SELECT') input.selectedIndex = 0;
+                else input.value = '';
+            });
+            form.submit();
+        }
+    </script>
+</body>
+</html>
