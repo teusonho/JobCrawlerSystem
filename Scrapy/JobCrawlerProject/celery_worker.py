@@ -70,11 +70,10 @@ if __name__ == "__main__":
         if process.returncode == 0:
             # 解析子进程打印的 JSON 数据
             items = json.loads(stdout.strip())
-            return {
-                "success": lambda items:True if len(items) else False,
-                "items": items,
-                "exception": ""
-            }
+            return {"success": True if len(items) > 0 else False,
+                    "items": items,
+                    "exception": ""
+                    }
         else:
             return {
                 "success": False,
