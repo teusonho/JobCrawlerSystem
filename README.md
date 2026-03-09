@@ -1,4 +1,4 @@
-# 基于Django+Scrapy的爬虫系统
+# 基于Django+Scrapy的爬虫系统采集Boss直聘岗位列表
 
 ## 1.功能介绍
 
@@ -8,7 +8,7 @@
 
 进入admin界面，通过以下方式下发爬虫任务：
 
-(1)新建；(2)批量导入；(3)celery定时下发；(4)API下发，URL请求格式为http://127.0.0.1:8000/spider/api/create-task?query=python&city=北京&count=20。
+(1)新建；(2)批量导入；(3)celery定时下发；(4)API下发，支持GET和POST请求，URL格式：/spider/api/create-task?query=python&city=北京&count=20。
 
 批量导入参考“Django\CrawlerOperationProject\爬虫任务模版.csv”文件。
 domain字段默认zhipin.com；
