@@ -1,7 +1,12 @@
-from django.shortcuts import render
-from django.db.models import Q
-from django.shortcuts import redirect
-from .models import BossSpiderResultsBeat,BossSpiderResults
+import json
+
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+
+from .models import BossSpiderResultsBeat, BossSpiderResults, BossSpiderTask
+from .tasks import send_boss_spider_task
+
 
 def items_root_redirect(request):
     """
@@ -115,3 +120,108 @@ def boss_spider_items_by_task_id_view(request, task_id):
         'scales': scales,
     }
     return render(request, 'boss_spider_items.html', context)
+
+
+@csrf_exempt
+def create_spider_task_api(request):
+    """
+        API 接口：创建爬虫任务
+        支持 GET 和 POST 两种方式
+        GET: /spider/api/create-task/?query=Java&city=北京&count=10
+        POST: JSON body with {city, count, query}
+        返回：JSON 格式的任务信息
+        """
+    try:
+        # 处理 GET 请求
+        if request.method == 'GET':
+            city = request.GET.get('city')
+            count = request.GET.get('count', '10')
+            query = request.GET.get('query', 'python')
+
+        # 处理 POST 请求
+        else:
+            data = json.loads(request.body)
+            city = data.get('city')
+            count = data.get('count', '10')
+            query = data.get('query', 'python')
+
+        # 验证 count 是否为整数
+        try:
+            count = int(count)
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'error': 'count must be an integer'
+            }, status=400)
+
+        # 创建数据库记录（初始状态为 PENDING）
+        task_entry = BossSpiderTask.objects.create(
+            domain='zhipin.com',
+            city=city,
+            count=count,
+            query=query,
+            status='PENDING'
+        )
+
+        # 异步执行 Celery 任务
+        celery_result = send_boss_spider_task(city, count, query)
+
+        # 更新数据库记录
+        task_entry.status = celery_result.get('status')
+        task_entry.result = str(celery_result.get('result'))
+        task_entry.exception = str(celery_result.get('exception', ''))[:100]
+        task_entry.task_id = celery_result.get('task_id')
+        task_entry.save(update_fields=['status', 'result', 'exception', 'task_id'])
+
+        # 保存爬取结果到 BossSpiderResults
+        items = celery_result.get('items', [])
+        for item in items:
+            processed_item = item.copy()
+            for field in ['skills', 'welfare']:
+                if field in processed_item:
+                    value = processed_item[field]
+                    if isinstance(value, list):
+                        processed_item[field] = ','.join(str(v) for v in value)
+
+            BossSpiderResults.objects.create(
+                task_id=celery_result.get('task_id'),
+                name=processed_item.get('name', ''),
+                link=processed_item.get('link', ''),
+                boss_name=processed_item.get('boss_name', ''),
+                boss_title=processed_item.get('boss_title', ''),
+                salary=processed_item.get('salary', ''),
+                skills=processed_item.get('skills', ''),
+                experience=processed_item.get('experience', ''),
+                degree=processed_item.get('degree', ''),
+                city=processed_item.get('city', ''),
+                area=processed_item.get('area', ''),
+                address=processed_item.get('address', ''),
+                company=processed_item.get('company', ''),
+                scale=processed_item.get('scale', ''),
+                welfare=processed_item.get('welfare', ''),
+                keyword=query,
+            )
+
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'task_id': task_entry.task_id,
+                'db_id': task_entry.id,
+                'status': task_entry.status,
+                'result_count': celery_result.get('result'),
+                'city': city,
+                'count': count,
+                'query': query
+            }
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON format'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

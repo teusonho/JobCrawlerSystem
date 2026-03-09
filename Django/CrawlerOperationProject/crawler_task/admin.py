@@ -60,13 +60,13 @@ class BossSpiderTaskAdmin(ImportExportModelAdmin):
                 task_obj.exception = result.get("exception")
                 task_obj.task_id = result.get("task_id")
                 task_obj.save(update_fields=['update_time', 'status', 'result', 'exception', 'task_id'])
-                self.save_items(task_obj.task_id,result.get("items"))
+                self.save_items(task_obj.task_id,result.get("items"),query)
 
             self.message_user(request, f"Started spider for task {task_obj.id}", level='SUCCESS')
 
     run_spider.short_description = "Run spider tasks"
 
-    def save_items(self,task_id,items):
+    def save_items(self,task_id,items,query):
         for item in items:
             processed_item = item.copy()
             for field in ['skills', 'welfare']:
@@ -93,4 +93,5 @@ class BossSpiderTaskAdmin(ImportExportModelAdmin):
                 welfare=processed_item.get('welfare', ''),
                 # description=processed_item.get('description', ''),
                 # address_detail=processed_item.get('address_detail', ''),
+                keyword=query,
             )

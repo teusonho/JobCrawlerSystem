@@ -60,6 +60,7 @@ def send_boss_spider_beat(city, count, query):
             welfare=processed_item.get('welfare', ''),
             # description=processed_item.get('description', ''),
             # address_detail=processed_item.get('address_detail', ''),
+            keyword=query,
             # Django 模型会自动处理 created_at 和 updated_at
         )
     return result_data

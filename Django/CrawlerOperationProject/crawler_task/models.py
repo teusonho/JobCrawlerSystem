@@ -49,6 +49,7 @@ class BossSpiderItems(models.Model):
     welfare = models.TextField(blank=True, null=True, help_text='公司福利 (逗号分隔的字符串)') # 存储处理后的字符串
     # description = models.TextField(blank=True, null=True, help_text='职位描述')
     # address_detail = models.CharField(max_length=255, blank=True, null=True, help_text='详细地址')
+    keyword = models.CharField(max_length=50, blank=True, null=True, help_text='关键词') # 关键词搜索
     created_at = models.DateTimeField(auto_now_add=True, help_text='创建时间')
     updated_at = models.DateTimeField(auto_now=True, help_text='最后更新时间')
 

@@ -6,7 +6,9 @@
 
 ### 1.1 web端功能
 
-进入admin界面，通过新建、批量导入、定时下发爬虫任务
+进入admin界面，通过以下方式下发爬虫任务：
+
+(1)新建；(2)批量导入；(3)celery定时下发；(4)API下发，URL请求格式为http://127.0.0.1:8000/spider/api/create-task?query=python&city=北京&count=20。
 
 批量导入参考“Django\CrawlerOperationProject\爬虫任务模版.csv”文件。
 domain字段默认zhipin.com；
@@ -123,5 +125,5 @@ boss直聘网站开启了反爬措施，包括但不限于以下措施：
 
 boss直聘25年12月下旬开启了浏览器反调试，在edge和chrome打开开发者工具会触发页面闪退无法获取响应包，可更换firefox火狐浏览器调试。
 
-
+项目代码预留了爬取岗位详情的内容，暂时注释掉，原因为爬取岗位详情时，需要对每个岗位链接都发送请求，极易触发IP风控，并一并注释Django项目中的description岗位描述和address_detail详细地址字段。
 

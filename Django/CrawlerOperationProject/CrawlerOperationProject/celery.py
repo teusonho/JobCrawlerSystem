@@ -18,12 +18,12 @@ app.conf.beat_schedule = {
     'run-spider-daily_first': {
         'task': 'spider.send_boss_spider_beat',
         'schedule': crontab(hour=14, minute=00), # 每天 14:00 AM 执行
-        'args': (['北京','上海'], 30, 'python')
+        'args': (['福州','厦门'], 30, 'python')
     },
     'run-spider-daily_test': {
         'task': 'spider.send_boss_spider_beat',
-        'schedule': timedelta(seconds=10),      # 每 30 秒执行一次
-        'args': ('杭州', 30, 'python')
+        'schedule': timedelta(seconds=30),      # 每 30 秒执行一次
+        'args': ('福州', 5, 'python')
     },
 }
 
