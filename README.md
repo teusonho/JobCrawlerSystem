@@ -20,7 +20,7 @@ query字段用于boss直聘搜索。
 
 爬虫任务下发后生成任务ID，可通过URL查询该任务的采集详情，如下图。
 
-![image-20260308234836368](https://github.com/teusonho/CrawlerSystem/blob/main/README_pic/spider_detail.png)
+![image-20260308234836368](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/spider_detail.png)
 
 ### 1.2 爬虫端功能
 
