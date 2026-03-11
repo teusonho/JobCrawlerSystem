@@ -127,7 +127,7 @@ def create_boss_spider_task_api(request):
     """
         API 接口：创建爬虫任务
         支持 GET 和 POST 两种方式
-        GET: /spider/api/create-task/?query=Java&city=北京&count=10
+        GET: /spider/api/boss/createSpider?query=Java&city=北京&count=10
         POST: JSON body with {city, count, query}
         返回：JSON 格式的任务信息
         """
