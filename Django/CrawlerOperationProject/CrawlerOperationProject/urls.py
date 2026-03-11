@@ -24,5 +24,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('', lambda request: redirect('/admin/crawler_task/bossspidertask/')),  # 根路径
     path('spider/', items_root_redirect, name='items_redirect'),
+    path('spider/boss/', items_root_redirect, name='items_redirect'),
     path('spider/', include('crawler_task.urls')),
 ]

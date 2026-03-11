@@ -10,7 +10,7 @@ from .tasks import send_boss_spider_task
 
 def items_root_redirect(request):
     """
-    视图函数：重定向 /spider/ 到 /spider/items/
+    视图函数：重定向 /spider/ 到 /spider/boss/beat/
     """
     return redirect('boss_spider_items_by_beat') # 使用目标 URL 的 name
 
@@ -123,7 +123,7 @@ def boss_spider_items_by_task_id_view(request, task_id):
 
 
 @csrf_exempt
-def create_spider_task_api(request):
+def create_boss_spider_task_api(request):
     """
         API 接口：创建爬虫任务
         支持 GET 和 POST 两种方式
