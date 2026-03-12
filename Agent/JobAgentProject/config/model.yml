@@ -1,0 +1,2 @@
+ollama_status: 0    # 是否启用本地ollama模型
+chat_model_name: qwen3-max # 主要的聊天模型，项目使用千问

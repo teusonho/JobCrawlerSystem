@@ -1,8 +1,8 @@
-# 基于Django+Scrapy的爬虫系统采集Boss直聘岗位列表
+# 爬虫智能体系统采集Boss直聘岗位列表
 
 ## 1.功能介绍
 
-该系统主要用于采集boss直聘的岗位信息，基于Django框架搭建web端，基于Scrapy框架搭建爬虫端，二者通过celery中间件和Redis消息队列通信。
+该系统基于Django+Scrapy+Agent搭建，主要用于采集boss直聘的岗位信息，基于Django框架搭建web端，基于Scrapy框架搭建爬虫端，二者通过celery中间件和Redis消息队列通信。Agent智能体部分基于langchain框架搭建，使用“qwen3-max”作为聊天模型，基于streamlit开发前端页面。
 
 ### 1.1 web端功能
 
@@ -31,9 +31,24 @@ query字段用于boss直聘搜索。
 (3)解析后再携带参数重新发包获取岗位列表，得到为失败响应则延迟重试步骤(1)(3)，直到成功或达到最大尝试次数；
 (4)任务结束后保存Mysql数据库并通过消息队列redis返回。
 
+### 1.3 智能体端功能
+
+智能体的执行逻辑如下：
+
+(1)接收用户输入，提取城市和职位；
+(2)查询关键词和城市在数据库是否已有任务结果；
+(3)若无结果则下发爬虫任务采集岗位信息；
+(4)若已有任务ID，则携带任务ID生成查询语句，传入SQL Agent；
+(5)SQL Agent解析查询语句使用工具查询，并返回查询结果
+(6)根据查询结果，再分析岗位信息和推荐岗位链接。
+
+智能体具有上下文记忆的功能，对话示例如下：
+
+![image-20260313041021287](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/user_conversation.png)
+
 ## 2.配置
 
-系统分为两个项目分别部署。
+系统分为两个项目分别部署，web端功能依赖于爬虫端，智能体功能依赖于web端。
 
 ### 2.1 web端配置
 
@@ -47,7 +62,7 @@ CELERY_RESULT_BACKEND
 
 celery beat定时下发的任务，需设置CrawlerOperationProject\celery.py文件
 
-### 2.2爬虫端配置
+### 2.2 爬虫端配置
 
 Scrapy项目需修改，\JobCrawlerProject\JobCrawlerProject\settings.py文件以下参数，用于配置浏览器、Mysql和Redis，配置的edge或chrome浏览器需保留登录账户。
 
@@ -58,11 +73,15 @@ CELERY_BROKER_URL
 CELERY_RESULT_BACKEND
 ```
 
+### 2.3 智能体配置
+
+Agent项目需修改，\JobAgentProject\config文件夹下的各yml参数，用于配置Mysql数据库链接和模型，项目使用通义千问作为聊天模型，若需适配更改，\JobAgentProject\model\factory.py文件。
+
 ## 3.启动
 
 ### 3.1 web端启动
 
-进入Django项目的CrawlerOperationProject目录下（manage.py所在目录），激活虚拟环境。
+进入Django项目的 CrawlerOperationProject 目录下（manage.py所在目录），激活虚拟环境。
 
 执行迁移
 
@@ -91,14 +110,26 @@ celery -A CrawlerOperationProject beat -l info
 
 ### 3.2 爬虫端启动
 
-进入Scrapy项目的JobCrawlerProject目录下（celery_worker.py所在目录），激活虚拟环境。
+进入Scrapy项目的 JobCrawlerProject 目录下（celery_worker.py所在目录），激活虚拟环境。
 
-测试可通过main.py代码单独运行爬虫
+测试可通过 main.py 代码单独运行爬虫。
 
 启动celery worker，用于接收爬虫任务，-Q参数指定监听队列spider.tasks_queue
 
 ```
 celery -A celery_worker worker -l info -P solo -Q spider.worker_queue
+```
+
+### 3.3 智能体启动
+
+进入Scrapy项目的JobAgentProject目录下（app.py所在目录），激活虚拟环境。
+
+测试可通过/agent/agent_react.py代码单独测试智能体功能。
+
+启动智能体前端，默认为127.0.0.1本机的8051端口
+
+```
+streamlit run app.py
 ```
 
 ## 4. 安全说明

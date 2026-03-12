@@ -1,0 +1,8 @@
+system_domain: http://127.0.0.1:8000    # web端口，主要使用下发爬虫任务的API
+user_history_path: data/user            # 历史对话保存路径
+database:                               # web端的数据库链接
+     host: localhost
+     port: 3306
+     user: 
+     password: 
+     name: crawler_operation
