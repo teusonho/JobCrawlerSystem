@@ -44,7 +44,7 @@ query字段用于boss直聘搜索。
 
 智能体具有上下文记忆的功能，对话示例如下：
 
-![image-20260313041021287](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/conversation.png)
+![image-20260313041021287](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/user_conversation.jpg)
 
 ## 2.配置
 
