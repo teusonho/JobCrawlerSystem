@@ -46,7 +46,7 @@ query字段用于boss直聘搜索。
 
 ![image-20260313041021287](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/user_conversation_1.jpg)
 
-![image-20260405222721231](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/user_conversation_1.jpg)
+![image-20260405222721231](https://github.com/teusonho/JobCrawlerSystem/blob/main/README_pic/user_conversation_2.jpg)
 
 ## 2.配置
 
