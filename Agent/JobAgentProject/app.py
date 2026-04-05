@@ -2,9 +2,11 @@ import time
 import streamlit as st
 
 from agent.agent_react import AgentReact
-from utils.history_tool import load_user_history, save_user_history, ensure_user_history_dir
-import os
-import json
+from utils.history_tool import (
+    clear_user_history,
+    load_user_history,
+    save_user_history,
+)
 
 # 启动命令：streamlit run app.py
 
@@ -28,8 +30,6 @@ st.divider()
 
 # ==================== 侧边栏配置 ====================
 with st.sidebar:
-    st.header("⚙️ 设置")
-    
     # 用户管理
     st.subheader("👤 用户管理")
     custom_user = st.text_input(
@@ -53,20 +53,13 @@ with st.sidebar:
     
     if st.button("🗑️ 清空对话历史", use_container_width=True):
         user_id = st.session_state["user_id"]
-        user_dir = ensure_user_history_dir(user_id)
-        history_file = os.path.join(user_dir, "history.json")
-        
-        if os.path.exists(history_file):
-            with open(history_file, 'w', encoding='utf-8') as f:
-                json.dump([], f, ensure_ascii=False)
-            st.success("✅ 历史已清空！")
-            st.session_state["message"] = [
-                {"role": "ai", "content": "你好，欢迎使用岗位搜索智能助手。"}
-            ]
-            time.sleep(1)
-            st.rerun()
-        else:
-            st.warning("暂无历史记录")
+        clear_user_history(user_id)
+        st.success("✅ 历史已清空！")
+        st.session_state["message"] = [
+            {"role": "ai", "content": "你好，欢迎使用岗位搜索智能助手。"}
+        ]
+        time.sleep(1)
+        st.rerun()
     
     if st.button("🔄 重新加载历史", use_container_width=True):
         loaded_history = load_user_history(st.session_state["user_id"], limit=20)
@@ -80,7 +73,7 @@ with st.sidebar:
     
     # 统计信息
     st.subheader("📊 统计信息")
-    history_count = len(load_user_history(st.session_state["user_id"], limit=100))
+    history_count = len(load_user_history(st.session_state["user_id"], limit=99))
     st.metric("对话条数", history_count)
 
 # ==================== 初始化 Agent ====================
@@ -119,7 +112,7 @@ for idx, message in enumerate(st.session_state["message"]):
             st.write(content)
 
 # ==================== 用户输入处理 ====================
-prompt = st.chat_input("请输入你的需求，例如：我想找福州的 Python 工程师岗位...")
+prompt = st.chat_input("请输入你的需求，例如：我想找北京的 Python 工程师岗位...")
 
 if prompt:
     # 显示用户消息

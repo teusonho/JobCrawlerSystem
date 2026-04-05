@@ -1,20 +1,86 @@
 from datetime import datetime, timedelta
-from typing import Dict, Any
+from functools import lru_cache
+from typing import Dict, Any, List
 
 import requests
+from langchain_classic.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
 from langchain_community.agent_toolkits import create_sql_agent
-from langchain_core.tools import tool
+from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain_community.tools.sql_database.tool import QuerySQLDatabaseTool
+from langchain_core.prompts import PromptTemplate
+from langchain_core.tools import BaseTool, tool
 from sqlalchemy import text
 
 from model.factory import chat_model
 from utils.config_tool import agent_conf, get_mysql_connection
 from utils.logger_tool import logger
+from utils.prompts_tool import load_query_prompt
 
 # 初始化数据库连接
 JOB_INFO_DB = get_mysql_connection("boss_spider_results")
 
+
+class SlimSQLDatabaseToolkit(SQLDatabaseToolkit):
+    """仅暴露「执行 SQL」工具：表结构通过 prompt 注入，避免每次 list_tables / schema / checker。"""
+
+    def get_tools(self) -> List[BaseTool]:
+        return [
+            QuerySQLDatabaseTool(
+                db=self.db,
+                description=(
+                    "输入：语法正确的 SELECT 语句（仅查询，禁止 DML）。"
+                    "输出：查询结果文本；若报错，根据系统提示中的表结构修正 SQL 后重试。"
+                ),
+            )
+        ]
+
+
+@lru_cache(maxsize=8)
+def _build_sql_agent_executor(prefix_template: str, suffix_template: str):
+    """
+    按给定 query 提示词模板构建 SQL Agent（进程内缓存多组模板便于切换场景）。
+    表结构在构建时写入 prompt；修改 prompts/query_prompt.txt 后需 cache_clear 或换用新模板字符串。
+    """
+    toolkit = SlimSQLDatabaseToolkit(llm=chat_model, db=JOB_INFO_DB)
+    template = "\n\n".join(
+        [
+            prefix_template,
+            "{tools}",
+            FORMAT_INSTRUCTIONS,
+            suffix_template,
+        ]
+    )
+    prompt = PromptTemplate.from_template(template)
+    return create_sql_agent(
+        llm=chat_model,
+        toolkit=toolkit,
+        agent_type="zero-shot-react-description",
+        prompt=prompt,
+        verbose=False,
+        max_iterations=6,
+        handle_parsing_errors=True,
+    )
+
+
+def get_job_sql_agent_executor(
+    query_prefix: str | None = None,
+    query_suffix: str | None = None,
+):
+    """
+    获取 SQL 子 Agent。默认从 prompts/query_prompt.txt 加载；切换场景可传入自定义前后缀模板
+   （须保留 {dialect}、{top_k}、{table_info} 与 {input}、{agent_scratchpad} 等占位符）。
+    """
+    if query_prefix is None or query_suffix is None:
+        query_prefix, query_suffix = load_query_prompt()
+    return _build_sql_agent_executor(query_prefix, query_suffix)
+
+
+def clear_job_sql_agent_cache() -> None:
+    """清空 SQL Agent 缓存（例如热更新了 query 提示词文件后）。"""
+    _build_sql_agent_executor.cache_clear()
+
 @tool(description="采集岗位信息，获取采集结果和任务ID")
-def crawl_job_info(query: str, website: str = "boss", city: str | list[str] = "厦门", count: int = 15) -> Dict[
+def crawl_job_info(query: str, website: str = "boss", city: str | list[str] = "厦门", count: int = 30) -> Dict[
     str, Any]:
     """
     爬取岗位信息的API
@@ -101,15 +167,7 @@ def query_job_database(query_str: str) -> str:
     - 查询结果及分析
     """
     try:
-        # 尝试使用通用的 agent 类型
-        sql_agent = create_sql_agent(
-            llm=chat_model,
-            db=JOB_INFO_DB,
-            agent_type="zero-shot-react-description",  # 通用的 ReAct 格式，兼容所有模型
-            verbose=True,
-            max_iterations=10,
-            handle_parsing_errors=True,
-        )
+        sql_agent = get_job_sql_agent_executor()
         logger.info(f"[query_job_database]查询岗位信息: {query_str}")
         result = sql_agent.invoke({"input": query_str})
         return result.get("output", "查询未返回结果")

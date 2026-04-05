@@ -3,17 +3,18 @@ from langchain.agents import create_agent
 from agent.agent_middleware import tool_monitor, log_before_model
 from agent.agent_tools import crawl_job_info,get_task_ids, query_job_database
 from model.factory import chat_model
-from utils.prompts_tool import load_system_prompt
+from utils.prompts_tool import load_main_prompt
 
 
 class AgentReact:
-    def __init__(self, user_id: str = "default"):
+    def __init__(self, user_id: str = "default", system_prompt: str | None = None):
         self.user_id = user_id
+        prompt = system_prompt if system_prompt is not None else load_main_prompt()
         self.agent = create_agent(
             model=chat_model,
             tools=[crawl_job_info,get_task_ids, query_job_database],
             middleware=[tool_monitor, log_before_model],
-            system_prompt=load_system_prompt(),
+            system_prompt=prompt,
         )
 
     def execute_stream(self, query: str, history: list = None):
@@ -40,25 +41,27 @@ class AgentReact:
 
         for chunk in self.agent.stream(input_dict, stream_mode="values", context={"report": False}):
             lastest_message = chunk["messages"][-1]
-            if lastest_message:
-                if lastest_message:
-                    # 处理 content 可能是列表的情况
-                    content = lastest_message.content
+            if not lastest_message:
+                continue
+            # values 模式下，模型尚未返回时最后一条仍是用户消息，若直接 yield 会把用户话拼进「AI 回复」
+            if getattr(lastest_message, "type", None) != "ai":
+                continue
+            # 处理 content 可能是列表的情况
+            content = lastest_message.content
 
-                    if isinstance(content, list):
-                        # 如果是列表，提取所有文本内容并拼接
-                        text_parts = []
-                        for item in content:
-                            if isinstance(item, dict):
-                                text_parts.append(item.get("text", ""))
-                            elif isinstance(item, str):
-                                text_parts.append(item)
-                        content = "".join(text_parts)
+            if isinstance(content, list):
+                # 如果是列表，提取所有文本内容并拼接
+                text_parts = []
+                for item in content:
+                    if isinstance(item, dict):
+                        text_parts.append(item.get("text", ""))
+                    elif isinstance(item, str):
+                        text_parts.append(item)
+                content = "".join(text_parts)
 
-                    # 确保 content 是字符串
-                    if isinstance(content, str):
-                        yield content.strip() + "\n"
-
+            # 确保 content 是字符串
+            if isinstance(content, str):
+                yield content.strip() + "\n"
 
 if __name__ == '__main__':
     agent = AgentReact()
